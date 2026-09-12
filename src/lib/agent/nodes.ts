@@ -116,7 +116,7 @@ export function createNodes(dataset: Dataset) {
         "理解问题",
         (parsed?.restated ?? "按关键词解析") + "：诊断 " + date + " 的" + metricLabel(metricId) + "（" + metricId + "）" +
           (filter ? "，限定 " + Object.entries(filter).map(([k, v]) => dimensionLabel(k) + "=" + v).join("、") : ""),
-        { decision: parsed ? "LLM 解析" : "确定性回退解析（未配置 API Key）" },
+        { decision: parsed ? "LLM 解析" : "确定性回退解析（模型未启用或调用失败）" },
       ),
     };
   }
@@ -663,7 +663,7 @@ export function createNodes(dataset: Dataset) {
       llmUsed: narrative !== fallbackNarrative,
       analysisLog: logStep("generate_final_diagnosis", "S7", "llm", "输出结论", finalDiagnosis.headline, {
         payload: finalDiagnosis,
-        decision: narrative === fallbackNarrative ? "模板结论（未配置 API Key）" : "LLM 结论",
+        decision: narrative === fallbackNarrative ? "模板结论（模型未启用或调用失败）" : "LLM 结论",
       }),
     };
   }

@@ -1,5 +1,5 @@
 import { buildDiagnosisGraph, GRAPH_SPEC } from "@/lib/agent/graph";
-import { llmEnabled, modelName } from "@/lib/agent/llm";
+import { providerInfo } from "@/lib/agent/llm";
 import { DEMO_DATASET_ID, getDataset, getDemoDataset } from "@/lib/data/store";
 import type { AnalysisStep } from "@/lib/agent/state";
 
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         send({
           type: "start",
           graph: GRAPH_SPEC,
-          llm: { enabled: llmEnabled(), model: llmEnabled() ? modelName() : null },
+          llm: providerInfo(),
           dataset: dataset.metadata,
         });
         const graph = buildDiagnosisGraph(dataset);

@@ -65,7 +65,7 @@ export default function Home() {
   const [drill, setDrill] = useState<DrillLike | null>(null);
   const [events, setEvents] = useState<EventLike[]>([]);
   const [diagnosis, setDiagnosis] = useState<FinalDiagnosis | null>(null);
-  const [llm, setLlm] = useState<{ enabled: boolean; model: string | null } | null>(null);
+  const [llm, setLlm] = useState<{ enabled: boolean; provider?: string | null; model: string | null } | null>(null);
   const [routePath, setRoutePath] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -196,7 +196,11 @@ export default function Home() {
         <div className="flex flex-wrap items-center gap-2">
           <span className="tag tag-blue">Agent orchestration: LangGraph</span>
           {llm && (
-            <span className="tag">{llm.enabled ? "推理模型：" + llm.model : "未配置 API Key · 确定性回退模式"}</span>
+            <span className="tag">
+              {llm.enabled
+                ? "推理模型：" + (llm.provider === "deepseek" ? "DeepSeek" : "Anthropic") + " / " + llm.model
+                : "未配置 API Key · 确定性回退模式"}
+            </span>
           )}
         </div>
       </header>

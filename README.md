@@ -138,11 +138,21 @@ npm run dev
 
 ## 环境变量
 
+支持两个 provider，任选其一即可（两个都配时用 `LLM_PROVIDER` 指定；都不配则走确定性回退）。
+
 | 变量 | 必填 | 说明 |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | 是（生产） | Claude API Key，用于 LLM 节点 |
+| `LLM_PROVIDER` | 否 | `deepseek` 或 `anthropic`，留空时自动选用已配置 Key 的那个 |
+| `DEEPSEEK_API_KEY` | 二选一 | DeepSeek API Key（OpenAI 兼容接口，base URL `https://api.deepseek.com`） |
+| `DEEPSEEK_MODEL` | 否 | 默认 `deepseek-flash`，也可用 `deepseek-v4-pro` |
+| `DEEPSEEK_BASE_URL` | 否 | 自定义网关时才填 |
+| `ANTHROPIC_API_KEY` | 二选一 | Claude API Key |
 | `ANTHROPIC_MODEL` | 否 | 默认 `claude-sonnet-5` |
 | `AGENT_MAX_VALIDATION_LOOPS` | 否 | 验证循环上限，默认 2 |
+
+LLM 节点的结构化输出优先走工具调用（`withStructuredOutput`），失败时自动退回 JSON 模式（`response_format=json_object`）再用 zod 校验，因此对不同 provider 的工具调用实现差异有容错。
+
+**DeepSeek 注意事项**（已在代码中处理）：`deepseek-flash` 默认开启 thinking 模式，而该模式不支持强制 `tool_choice`，会让结构化输出直接 400。因此调用时默认传 `{"thinking": {"type": "disabled"}}`；需要思考模式时设 `DEEPSEEK_THINKING=enabled`（此时 `temperature` 等参数按官方文档不生效，结构化输出会自动走 JSON 兜底）。
 
 ## 部署到 Vercel
 
