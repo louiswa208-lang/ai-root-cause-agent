@@ -25,10 +25,13 @@ const LAYERS: LayerDef[] = [
 export function DiagnosisPath({
   activeLayer,
   visitedLayers,
+  outcomeLayer,
   note,
 }: {
   activeLayer?: string;
   visitedLayers: string[];
+  /** 指标异常最终表现出来的层（例如 GMV 在交易层报警，但首发层在搜索层） */
+  outcomeLayer?: string;
   note?: string;
 }) {
   return (
@@ -47,7 +50,8 @@ export function DiagnosisPath({
         <div className="grid grid-cols-2 gap-2 sm:flex sm:min-w-[560px] sm:items-stretch sm:gap-1.5">
           {LAYERS.map((l, i) => {
             const isActive = activeLayer === l.name;
-            const isVisited = visitedLayers.includes(l.name);
+            const isOutcome = !isActive && outcomeLayer === l.name;
+            const isVisited = visitedLayers.includes(l.name) || isOutcome;
             return (
               <div key={l.name} className="flex min-w-0 flex-1 items-stretch gap-1.5">
                 <div
@@ -74,6 +78,11 @@ export function DiagnosisPath({
                       {l.name}
                     </span>
                     {isActive && <span className="ml-auto rounded bg-white/20 px-1.5 py-0.5 text-[10px]">首发层</span>}
+                    {isOutcome && (
+                      <span className="ml-auto rounded bg-[var(--amber-soft)] px-1.5 py-0.5 text-[10px] text-[var(--amber)]">
+                        表现层
+                      </span>
+                    )}
                   </div>
                   <div className={"mt-1 text-[11px] leading-[1.5] " + (isActive ? "text-white/80" : "muted")}>{l.sub}</div>
                   <div className={"mt-1.5 text-[11px] leading-[1.5] " + (isActive ? "text-white/70" : "muted")}>

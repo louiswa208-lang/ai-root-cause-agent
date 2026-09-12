@@ -350,3 +350,102 @@ textarea::placeholder {
   max-width: 100%;
   -webkit-overflow-scrolling: touch;
 }
+
+/* ---------- 应用外壳：桌面端左右分栏独立滚动 ---------- */
+/* 移动端保持整页滚动；>=1024px 时锁死 body，由 .scroll-pane 各自滚动 */
+@media (min-width: 1024px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
+.scroll-pane {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+/* ---------- 细滚动条：可见但克制 ---------- */
+.scroll-pane,
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+.scroll-pane::-webkit-scrollbar,
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-pane::-webkit-scrollbar-track,
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-pane::-webkit-scrollbar-thumb,
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+}
+.scroll-pane:hover::-webkit-scrollbar-thumb,
+.scroll-thin:hover::-webkit-scrollbar-thumb {
+  background: var(--ink-3);
+}
+
+/* ---------- 区块导航 ---------- */
+.section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: blur(10px);
+}
+.section-nav button {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+.section-nav button:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+.section-nav button[data-active="true"] {
+  color: var(--blue-strong);
+  background: var(--blue-soft);
+  font-weight: 550;
+}
+
+/* ---------- Hero：结论区视觉权重最高 ---------- */
+.hero {
+  border-radius: 16px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(135deg, var(--blue), var(--indigo)) border-box;
+  box-shadow: var(--shadow-md);
+}
+
+/* 区块标题：用字号和留白拉开层级 */
+.sec-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}

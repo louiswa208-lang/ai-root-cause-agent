@@ -22,6 +22,10 @@ export function RootCauseCards({ causes }: { causes: CauseItem[] }) {
       hint="证据分由四项确定性判定加总：业务类型兼容的事件 40 分、影响范围一致 25 分、对照验证 25 分、机制关系可解释 10 分。"
       bodyClassName="p-0"
     >
+      <p className="t-caption border-b border-[var(--line)] px-4 py-2.5 leading-[1.65]">
+        以下候选原因由指标表现、影响范围、事件匹配与对照证据综合评分，按证据分从高到低排序。
+        排在第一位的是当前主原因，其余为仍未排除的替代解释。
+      </p>
       <div className="flex flex-col">
         {causes.map((c, i) => (
           <article key={c.causeId} className={"px-4 py-4 " + (i < causes.length - 1 ? "border-b border-[var(--line)]" : "")}>
@@ -29,6 +33,11 @@ export function RootCauseCards({ causes }: { causes: CauseItem[] }) {
               <span className="num chip chip-ghost py-0 text-[11px] font-semibold">{c.causeId}</span>
               <h3 className="text-[14px] font-semibold">{c.name}</h3>
               <span className={"chip py-0 text-[11px] " + (LEVEL_TONE[c.confidence] ?? "chip")}>{c.confidence}</span>
+              {i === 0 ? (
+                <span className="badge-grad py-0 text-[11px]">主原因</span>
+              ) : (
+                <span className="chip chip-ghost py-0 text-[11px]">替代解释</span>
+              )}
               <span className="ml-auto">
                 <ScoreBar score={c.score} />
               </span>

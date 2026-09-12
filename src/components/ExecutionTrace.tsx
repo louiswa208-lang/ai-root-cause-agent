@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Code2, Cpu, GitBranch, Terminal, Wrench } from "lucide-react";
+import { ChevronDown, ChevronRight, Code2, Cpu, GitBranch, Terminal, Wrench } from "lucide-react";
 import type { AnalysisStep } from "@/lib/agent/state";
 import { Card } from "./ui";
 
@@ -18,20 +18,43 @@ const KIND_META: Record<string, { label: string; icon: React.ReactNode; chip: st
  */
 export function ExecutionTrace({ steps }: { steps: AnalysisStep[] }) {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
+  // 技术细节，默认折叠，不抢占普通用户视线
+  const [open, setOpen] = useState(false);
   if (!steps.length) return null;
 
   return (
     <Card
       icon={<Code2 size={16} />}
       title="Execution Trace"
-      extra={<span className="t-caption whitespace-nowrap">{steps.length} 个节点</span>}
-      hint="LangGraph 实际执行到的节点、调用的确定性工具与条件边的路由结果。不包含模型的内部推理过程。"
+      extra={
+        <button
+          type="button"
+          className="btn btn-sm shrink-0"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+        >
+          {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+          {open ? "收起" : "展开技术执行轨迹"}
+        </button>
+      }
+      hint="LangGraph 实际执行到的节点、调用的确定性工具与条件边的路由结果。不包含模型的内部推理过程。主要服务于开发与技术评审。"
       bodyClassName="p-0"
     >
-      <ol className="scroll-thin max-h-[560px]">
+      {!open && (
+        <div className="flex flex-wrap items-center gap-1.5 px-4 py-3">
+          <span className="t-caption">本次共执行 {steps.length} 个节点：</span>
+          {[...new Set(steps.map((s) => s.node))].slice(0, 8).map((n) => (
+            <code key={n} className="chip chip-ghost py-0 font-mono text-[11px]">
+              {n}
+            </code>
+          ))}
+          {new Set(steps.map((s) => s.node)).size > 8 && <span className="t-caption">…</span>}
+        </div>
+      )}
+      <ol className={"scroll-thin max-h-[560px] " + (open ? "" : "hidden")}>
         {steps.map((s, i) => {
           const meta = KIND_META[s.kind] ?? KIND_META.system;
-          const open = openIdx === i;
+          const expanded = openIdx === i;
           return (
             <li key={i} className={i < steps.length - 1 ? "border-b border-[var(--line)]" : ""}>
               <div className="px-4 py-3">
@@ -72,12 +95,12 @@ export function ExecutionTrace({ steps }: { steps: AnalysisStep[] }) {
                   <>
                     <button
                       className="mt-1.5 flex items-center gap-1 text-[11px] text-[var(--ink-3)] hover:text-[var(--blue)]"
-                      onClick={() => setOpenIdx(open ? null : i)}
+                      onClick={() => setOpenIdx(expanded ? null : i)}
                     >
-                      <ChevronDown size={12} className={"transition-transform " + (open ? "rotate-180" : "")} />
-                      {open ? "收起" : "查看该步的结构化结果"}
+                      <ChevronDown size={12} className={"transition-transform " + (expanded ? "rotate-180" : "")} />
+                      {expanded ? "收起" : "查看该步的结构化结果"}
                     </button>
-                    {open && (
+                    {expanded && (
                       <pre className="scroll-thin x-scroll mt-1.5 max-h-[260px] rounded-lg bg-[var(--surface-2)] p-2.5 font-mono text-[11px] leading-[1.6] text-[var(--ink-2)]">
                         {safeJson(s.payload)}
                       </pre>
