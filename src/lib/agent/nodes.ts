@@ -62,6 +62,26 @@ function joinSentences(a: string, b: string): string {
   return b ? head + "。" + b : head + "。";
 }
 
+/**
+ * 清洗模型返回的结论正文：去掉 Markdown 标记与「归因结论」之类的标题行，
+ * 合并成一段纯文本，保证前端按纯文本渲染时不会出现 ** 或 ## 这类符号。
+ */
+function cleanNarrative(text: string): string {
+  const lines = text
+    .split(String.fromCharCode(10))
+    .map((line) =>
+      line
+        .replace(/^\s*#{1,6}\s*/, "")
+        .replace(/\*\*/g, "")
+        .replace(/^\s*[-*\u2022]\s+/, "")
+        .trim(),
+    )
+    .filter(Boolean);
+  // 丢掉开头的纯标题行：很短且不含句末标点，例如「归因结论」「结论如下：」
+  while (lines.length > 1 && lines[0].length <= 14 && !/[。；]/.test(lines[0])) lines.shift();
+  return lines.join("").trim();
+}
+
 /** 截断过长文本，保证前端展示的是结论而不是长篇推理。 */
 function trim(text: string, max: number): string {
   const t = text.trim();
@@ -851,6 +871,8 @@ export function createNodes(dataset: Dataset) {
       [
         "请用 4~6 句话写出归因结论，顺序为：先说层级，再说主贡献因子，然后说影响范围，最后说候选原因与置信度。",
         "不要重复罗列所有数字，只引用关键数字。不要给出数据以外的原因。",
+        "直接输出结论正文本身：不要加标题，不要用 Markdown 标记（**、##、列表符号），不要分段，写成连贯的一段话。",
+        "引用数值时保留给定的单位（元 / % / pp），不要把带单位的数字改写成裸数字。",
         "指标与偏离：" + deviationText,
         "首发层：" + layerLabel,
         "因子拆解：" + (state.decompositionResult ? state.decompositionResult.factors.map((f) => f.label + " " + formatMetricDelta(metricId, f.contribution) + "（占总变化 " + formatShare(f.share) + "）").join("；") : "无"),
@@ -861,6 +883,7 @@ export function createNodes(dataset: Dataset) {
         "对照验证：" + (state.comparison?.summary ?? "未执行"),
       ].join("\n"),
     )) ?? fallbackNarrative;
+    const narrativeText = cleanNarrative(narrative) || fallbackNarrative;
 
     const finalDiagnosis: FinalDiagnosis = {
       headline: metricLabel(metricId) + " " + anomaly.direction + " " + dev(anomaly.deviation) + "，首发层为" + layerLabel,
@@ -874,7 +897,7 @@ export function createNodes(dataset: Dataset) {
       causes,
       actions,
       caveats,
-      narrative,
+      narrative: narrativeText,
     };
     return {
       finalDiagnosis,
