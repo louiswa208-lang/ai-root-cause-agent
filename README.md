@@ -82,9 +82,57 @@ LLM 节点与确定性 Tool 节点分开，**LLM 不参与任何数学计算**�
 
 全部是确定性 TypeScript 函数，可单独测试：
 
-`detect_schema`、`detect_anomaly`（MAD / 修正 z 分数）、`check_data_quality`、`run_lmdi`、`run_additive_contribution`、`run_structure_efficiency`（shift-share）、`drill_down_dimension`、`analyze_numerator_denominator`、`search_event_timeline`、`match_root_causes`、`compare_groups`（双重差分）、`calculate_confidence`。
+`detect_schema`、`assess_capability`（数据可分析性检查）、`detect_anomaly`（MAD / 修正 z 分数）、`check_data_quality`、`run_lmdi`、`run_additive_contribution`、`run_structure_efficiency`（shift-share）、`drill_down_dimension`、`analyze_numerator_denominator`、`search_event_timeline`、`match_root_causes`、`compare_groups`（双重差分）、`calculate_confidence`。
+
+#### 事件匹配：时间接近不构成匹配
+
+`search_event_timeline` 与 `match_root_causes` 按固定优先级判定，**业务类型匹配 > 影响层匹配 > 影响范围匹配 > 时间接近**：
+
+1. **业务类型**：事件类型是否可能影响当前诊断的链路层（或事件自己声明了影响该指标）；
+2. **影响层**：事件首先影响的层与本次首发层是否一致（跨层事件放行）；
+3. **影响范围**：事件的 `scope_dim=scope_value` 与下钻得到的受影响范围是否一致；
+4. **时间接近**：权重最低，只做微调。
+
+任何一条硬性条件不满足的事件会被标记为「仅时间接近」，**不作为任何原因的正向证据**，只在时间轴上列出供人工排查。
+
+`causes.ts` 里另有一张「原因 ↔ 事件兼容矩阵」，规定每条原因可以接受哪些事件类型与作用层，例如：
+
+| 原因 | 只接受的事件类型 | 作用层 |
+| --- | --- | --- |
+| Y01 埋点变更或上报异常 | 口径与埋点 / 发版 / 故障 | 不限 |
+| Y09 搜索入口或出词策略变更 | 策略 / 实验 | 搜索层 |
+| Y12 运营活动与大促 | 运营活动 / 大促 / 营销活动 / 内容加热 / 投放 | 不限 |
+| Y18 作者回复行为变化 | 策略 | 互动层 |
+
+不兼容的事件会被显式记录为「已排除」并附上排除理由，前端在候选原因卡片里直接展示。
+
+#### 数据可分析性检查
+
+`assess_capability` 在 S1 先回答「这份数据能分析什么」：逐项检查 10 类分析所需的字段、维度与事件时间轴，给出 **Data Readiness 百分比**、可执行清单与受限清单（含缺失字段名）。**缺字段不会报错，也不会让模型去猜不存在的数据**——Agent 只用现有字段能支撑的部分给结论，并在行动建议里列出需要补齐的字段。
 
 方法来源：LMDI（Ang 2005 / 2015）、shift-share（Dunn 1960）、修正 z 分数（NIST/SEMATECH 1.3.5.17，引用 Iglewicz & Hoaglin）、双重差分（Card & Krueger 1994）。
+
+### 前端展示
+
+界面按「Modern Data Intelligence Platform」的方向组织，全部图标来自 `lucide-react`：
+
+| 模块 | 说明 |
+| --- | --- |
+| 数据集卡片 | Data Readiness、可用指标与维度 chips、缺失字段告警、「这份数据能分析什么」清单 |
+| Ask Agent | 自然语言输入 + 快捷提问，运行时显示当前阶段与阶段说明 |
+| 诊断流程 S1–S7 | 纵向步进器，未执行的阶段显式标为「已跳过」，S6 显示循环轮次 |
+| 业务诊断路径 | 内容 → 互动 → 搜索 → 交易四层，高亮本次首发层；互动 → 搜索用虚线表示产品假设关系 |
+| 事件时间轴 | 按匹配强度（强 / 中等 / 弱 / 仅时间接近）排序，逐条展示四项判定结果 |
+| 候选原因卡片 | 证据分 0~100 及其构成、支撑证据、缺失证据、已排除事件、建议验证方式、需要对接的团队 |
+| 归因结论 | 异常幅度 / 首发层与主贡献 / 影响范围 / 首位原因与置信度四张关键卡 + 结论正文 + 口径边界 |
+| 下一步行动 | 按 P0/P1/P2 优先级排序，标注动作类型与对接方 |
+| Agent 决策过程 | 每个节点的「发现了什么 / 为什么这样判断 / 接下来做什么」，取自 State |
+| Execution Trace | 实际执行到的节点、调用的工具、条件边路由结果，可展开查看每步的结构化结果 |
+
+两条展示原则：
+
+- **不展示模型的私有推理过程**。决策模块与 Execution Trace 展示的都是 State 中的确定性结果与路由判断。
+- **所有统计结果都带单位**。金额用「元」，相对变化用「%」，比率型指标的绝对变化用「pp」（例如 −58,200 元 / −18.6% / −5.8pp）。LMDI 单因子贡献占比可能超过 100%（反向因子对冲所致），图表旁有 ⓘ 说明这不是计算错误。
 
 ## 归因流程
 

@@ -100,6 +100,15 @@ export function buildSeries(rows: DataRow[], metricId: string, filter?: RowFilte
     });
 }
 
+/** 指标的展示单位：比率型为百分比，其余取注册表里的单位。 */
+export function metricUnit(metricId: string): string {
+  const def = METRIC_DEF_BY_ID[metricId];
+  if (!def) return "";
+  if (def.kind === "ratio" && def.unit !== "元") return "%";
+  return def.unit ?? "";
+}
+
+/** 指标绝对值。所有数值一律带单位，禁止输出裸数字。 */
 export function formatMetricValue(metricId: string, value: number): string {
   const def = METRIC_DEF_BY_ID[metricId];
   if (!def) return String(value);
@@ -107,5 +116,44 @@ export function formatMetricValue(metricId: string, value: number): string {
     return `${(value * 100).toFixed(2)}%`;
   }
   if (def.unit === "元") return `${value.toLocaleString("zh-CN", { maximumFractionDigits: 1 })} 元`;
-  return value.toLocaleString("zh-CN", { maximumFractionDigits: 0 });
+  const num = value.toLocaleString("zh-CN", { maximumFractionDigits: 0 });
+  return def.unit ? `${num} ${def.unit}` : num;
+}
+
+/**
+ * 指标的「绝对变化量」。
+ * 比率型指标的变化用百分点（pp），计数/金额型用原单位，均带正负号。
+ * 例：−5.8pp / −58,200 元 / −1,204 人
+ */
+export function formatMetricDelta(metricId: string, delta: number): string {
+  const def = METRIC_DEF_BY_ID[metricId];
+  const sign = delta > 0 ? "+" : delta < 0 ? "−" : "";
+  const abs = Math.abs(delta);
+  if (!def) return `${sign}${abs}`;
+  if (def.kind === "ratio" && def.unit !== "元") {
+    return `${sign}${(abs * 100).toFixed(2)}pp`;
+  }
+  const num = abs.toLocaleString("zh-CN", { maximumFractionDigits: def.unit === "元" ? 1 : 0 });
+  return def.unit ? `${sign}${num} ${def.unit}` : `${sign}${num}`;
+}
+
+/** 相对变化（比例 → 百分比），带正负号。例：−18.6% */
+export function formatPercentChange(ratio: number, digits = 1): string {
+  if (!Number.isFinite(ratio)) return "—";
+  const sign = ratio > 0 ? "+" : ratio < 0 ? "−" : "";
+  return `${sign}${(Math.abs(ratio) * 100).toFixed(digits)}%`;
+}
+
+/** 百分点差值（两个比率相减的结果），带正负号。例：−5.8pp */
+export function formatPp(diff: number, digits = 2): string {
+  if (!Number.isFinite(diff)) return "—";
+  const sign = diff > 0 ? "+" : diff < 0 ? "−" : "";
+  return `${sign}${(Math.abs(diff) * 100).toFixed(digits)}pp`;
+}
+
+/** 贡献占比（可能超过 100%，此时由前端补充解释）。 */
+export function formatShare(share: number, digits = 1): string {
+  if (!Number.isFinite(share)) return "—";
+  const sign = share < 0 ? "−" : "";
+  return `${sign}${(Math.abs(share) * 100).toFixed(digits)}%`;
 }

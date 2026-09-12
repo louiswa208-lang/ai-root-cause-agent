@@ -1,5 +1,5 @@
 import type { DataRow } from "../data/types";
-import { computeMetric, formatMetricValue, matchRow } from "../data/metrics";
+import { computeMetric, formatMetricValue, formatMetricDelta, formatPercentChange, formatPp, matchRow } from "../data/metrics";
 
 export interface CompareGroupsInput {
   metricId: string;
@@ -73,11 +73,16 @@ export function compareGroups(rows: DataRow[], input: CompareGroupsInput): Compa
   const controlChange = controlBefore === 0 ? 0 : (controlAfter - controlBefore) / controlBefore;
   const did = affectedChange - controlChange;
   const hasControl = controlValues.length > 0;
+  const affectedDelta = affectedAfter - affectedBefore;
   const summary = hasControl
-    ? "受影响组（" + input.affectedValues.join("、") + "）变化 " + (affectedChange * 100).toFixed(1) +
-      "%，未受影响组变化 " + (controlChange * 100).toFixed(1) + "%，双重差分 " + (did * 100).toFixed(1) +
-      "（当前值 " + formatMetricValue(input.metricId, affectedAfter) + "）"
-    : "数据中没有未受影响的对照组，只能给出受影响组前后对比：" + (affectedChange * 100).toFixed(1) + "%";
+    ? "受影响组（" + input.affectedValues.join("、") + "）" +
+      formatMetricValue(input.metricId, affectedBefore) + " → " + formatMetricValue(input.metricId, affectedAfter) +
+      "（" + formatMetricDelta(input.metricId, affectedDelta) + "，" + formatPercentChange(affectedChange) + "）；" +
+      "对照组（" + controlValues.join("、") + "）" + formatPercentChange(controlChange) + "；" +
+      "双重差分（两组相对变化之差）" + formatPp(did)
+    : "数据中没有未受影响的对照组，只能给出受影响组前后对比：" +
+      formatMetricValue(input.metricId, affectedBefore) + " → " + formatMetricValue(input.metricId, affectedAfter) +
+      "（" + formatMetricDelta(input.metricId, affectedDelta) + "，" + formatPercentChange(affectedChange) + "）";
   return {
     metricId: input.metricId,
     dimension: input.dimension,
@@ -117,6 +122,6 @@ export function compareBeforeAfter(
     after,
     change,
     summary: "事件前 " + formatMetricValue(metricId, before) + " → 事件后 " + formatMetricValue(metricId, after) +
-      "（变化 " + (change * 100).toFixed(1) + "%）",
+      "（" + formatMetricDelta(metricId, after - before) + "，" + formatPercentChange(change) + "）",
   };
 }

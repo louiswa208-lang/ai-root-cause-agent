@@ -7,6 +7,7 @@ import type { MatchedEvent } from "../tools/events";
 import type { CandidateCause } from "../tools/causes";
 import type { CompareGroupsResult } from "../tools/compare";
 import type { ConfidenceAssessment, EvidenceItem } from "../tools/confidence";
+import type { CapabilityReport } from "../tools/capability";
 
 export type Stage = "S1" | "S2" | "S3" | "S4" | "S5" | "S6" | "S7";
 export type BusinessLayer = "content" | "interaction" | "search" | "transaction";
@@ -40,6 +41,21 @@ export interface LayerFinding {
   extra?: Record<string, unknown>;
 }
 
+/**
+ * Agent 在每个关键节点的决策记录：发现了什么 → 为什么这样判断 → 接下来做什么。
+ * 全部由 State 中的确定性结果生成，不是模型的思维链。
+ */
+export interface AgentDecision {
+  node: string;
+  stage: Stage;
+  /** 发现了什么 */
+  found: string;
+  /** 为什么选择下一步 */
+  why: string;
+  /** 接下来做什么 */
+  next: string;
+}
+
 export interface FinalDiagnosis {
   headline: string;
   layerLabel: string;
@@ -57,8 +73,22 @@ export interface FinalDiagnosis {
     missing: string[];
     verifyMethod: string;
     partner: string;
+    /** 证据分 0~100 及其构成 */
+    score: number;
+    scoreBreakdown: { label: string; got: number; max: number; hit: boolean }[];
+    /** 支撑该原因的事件（业务类型兼容） */
+    supportingEvents: { id: string; name: string; date: string; strength: string }[];
+    /** 时间接近但被排除的事件 */
+    rejectedEvents: { eventId: string; name: string; reason: string }[];
   }[];
-  actions: { type: string; detail: string }[];
+  actions: {
+    type: string;
+    detail: string;
+    /** P0 最紧急 */
+    priority: "P0" | "P1" | "P2";
+    owner: string;
+    kind: "fix" | "validate" | "monitor" | "align";
+  }[];
   caveats: string[];
   narrative: string;
 }
@@ -73,6 +103,8 @@ export const DiagnosisState = Annotation.Root({
   filter: Annotation<Record<string, string> | undefined>({ reducer: (_, b) => b, default: () => undefined }),
 
   currentStage: Annotation<Stage>({ reducer: (_, b) => b, default: () => "S1" }),
+  capabilityReport: Annotation<CapabilityReport | undefined>({ reducer: (_, b) => b, default: () => undefined }),
+  agentDecisions: Annotation<AgentDecision[]>({ reducer: (a, b) => [...a, ...b], default: () => [] }),
   dataQualityIssues: Annotation<DataQualityIssue[]>({ reducer: (_, b) => b, default: () => [] }),
   anomalyResult: Annotation<AnomalyResult | undefined>({ reducer: (_, b) => b, default: () => undefined }),
 

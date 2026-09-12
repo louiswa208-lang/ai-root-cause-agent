@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------
+   Modern Data Intelligence Platform
+   底色 #F7F9FC，主色蓝 / 靛蓝，渐变只用于 Badge、主按钮与当前阶段。
+   ------------------------------------------------------------------ */
 :root {
-  --bg: #f6f7f9;
-  --panel: #ffffff;
-  --ink: #0b0b0b;
-  --ink2: #52514e;
-  --ink3: #898781;
-  --line: #e3e4e6;
-  --blue: #2a78d6;
-  --blue-lt: #eef4fc;
+  --bg: #f7f9fc;
+  --surface: #ffffff;
+  --surface-2: #f3f6fb;
+  --surface-3: #eaf0f9;
+  --line: #e4e9f2;
+  --line-strong: #d2dae8;
+
+  --ink: #0f172a;
+  --ink-2: #475569;
+  --ink-3: #8a97ab;
+
+  --blue: #2563eb;
+  --blue-strong: #1d4ed8;
+  --blue-soft: #eff5ff;
+  --indigo: #4f46e5;
+  --indigo-soft: #eef0fe;
+
+  --green: #0f8a5f;
+  --green-soft: #e9f8f1;
+  --amber: #b4740b;
+  --amber-soft: #fdf5e6;
+  --red: #c8372d;
+  --red-soft: #fdf1f0;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 2px 8px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 8px 28px rgba(15, 23, 42, 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --ink: #f2f3f5;
-    --ink2: #b9bdc6;
-    --ink3: #8b909b;
-    --line: #272b34;
-    --blue: #63a4ef;
-    --blue-lt: #1b2431;
+    --bg: #0c111b;
+    --surface: #141a26;
+    --surface-2: #1a2130;
+    --surface-3: #212a3b;
+    --line: #253049;
+    --line-strong: #33415c;
+
+    --ink: #eef2f8;
+    --ink-2: #b4c0d4;
+    --ink-3: #7f8da5;
+
+    --blue: #60a5fa;
+    --blue-strong: #3b82f6;
+    --blue-soft: #16233c;
+    --indigo: #8b8cf8;
+    --indigo-soft: #1d1f3d;
+
+    --green: #34d399;
+    --green-soft: #10281f;
+    --amber: #fbbf24;
+    --amber-soft: #2a2110;
+    --red: #f87171;
+    --red-soft: #2c1616;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -29,100 +71,282 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
 }
 
-.panel {
-  background: var(--panel);
+/* 轻量数据网格底纹：只在页面背景上出现，不用于插画 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0);
+  background-size: 22px 22px;
+  opacity: 0.55;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 720px);
+}
+
+/* ---------- 排版层级 ---------- */
+.t-title {
+  font-size: 26px;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.t-section {
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.t-metric {
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.t-metric-sm {
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.t-body {
+  font-size: 14px;
+  line-height: 1.65;
+}
+.t-caption {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.muted {
+  color: var(--ink-3);
+}
+.muted-2 {
+  color: var(--ink-2);
+}
+
+/* ---------- 容器 ---------- */
+.card {
+  position: relative;
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.card-pad {
+  padding: 18px;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.card-quiet {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
 }
 
-.tag {
+/* ---------- Chip / Badge ---------- */
+.chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 7px;
   font-size: 12px;
   line-height: 18px;
   border: 1px solid var(--line);
-  color: var(--ink2);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  white-space: nowrap;
 }
-
-.tag-blue {
-  background: var(--blue-lt);
-  color: var(--blue);
+.chip-blue {
+  background: var(--blue-soft);
   border-color: transparent;
+  color: var(--blue-strong);
+}
+.chip-green {
+  background: var(--green-soft);
+  border-color: transparent;
+  color: var(--green);
+}
+.chip-amber {
+  background: var(--amber-soft);
+  border-color: transparent;
+  color: var(--amber);
+}
+.chip-red {
+  background: var(--red-soft);
+  border-color: transparent;
+  color: var(--red);
+}
+.chip-ghost {
+  background: transparent;
+}
+/* 允许长文本 chip 折行，避免在窄屏撑出横向滚动条 */
+.chip-wrap {
+  white-space: normal;
+  max-width: 100%;
+  text-align: left;
 }
 
-.btn {
+/* 渐变只用在这里：品牌 Badge、主按钮、当前阶段 */
+.badge-grad {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
   border-radius: 8px;
+  font-size: 12px;
+  font-weight: 550;
+  color: #fff;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--indigo) 100%);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---------- 按钮 ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 9px;
   padding: 8px 14px;
-  font-size: 14px;
-  border: 1px solid var(--line);
-  background: var(--panel);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
   color: var(--ink);
   cursor: pointer;
-  transition: 0.15s;
+  transition: 0.15s ease;
+  white-space: nowrap;
 }
-
 .btn:hover:not(:disabled) {
   border-color: var(--blue);
   color: var(--blue);
 }
-
 .btn-primary {
-  background: var(--blue);
-  border-color: var(--blue);
+  border-color: transparent;
   color: #fff;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--indigo) 100%);
+  box-shadow: var(--shadow-sm);
 }
-
 .btn-primary:hover:not(:disabled) {
-  opacity: 0.9;
   color: #fff;
+  filter: brightness(1.06);
+  box-shadow: var(--shadow-md);
 }
-
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+}
 
+/* ---------- 输入 ---------- */
 textarea,
 input[type="text"] {
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
   padding: 10px 12px;
   font-size: 14px;
+  line-height: 1.55;
   color: var(--ink);
   width: 100%;
   outline: none;
+  transition: 0.15s ease;
+  resize: none;
 }
-
 textarea:focus,
 input[type="text"]:focus {
   border-color: var(--blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 14%, transparent);
+}
+textarea::placeholder {
+  color: var(--ink-3);
 }
 
-.muted {
-  color: var(--ink3);
+/* ---------- 进度 / 分隔 ---------- */
+.meter {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
 }
-
+.meter > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--blue), var(--indigo));
+}
 .divider {
   height: 1px;
   background: var(--line);
 }
 
+/* ---------- 状态动画 ---------- */
 .pulse {
-  animation: pulse 1.4s ease-in-out infinite;
+  animation: pulse 1.5s ease-in-out infinite;
 }
-
 @keyframes pulse {
   0%,
   100% {
     opacity: 1;
   }
   50% {
-    opacity: 0.45;
+    opacity: 0.4;
   }
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.rise {
+  animation: rise 0.28s ease-out both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* ---------- 滚动条 ---------- */
+.scroll-thin {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+}
+
+/* 宽内容横向滚动，页面本身不出现横向滚动条 */
+.x-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }

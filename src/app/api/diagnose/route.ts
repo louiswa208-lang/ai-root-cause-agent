@@ -1,7 +1,7 @@
 import { buildDiagnosisGraph, GRAPH_SPEC } from "@/lib/agent/graph";
 import { providerInfo } from "@/lib/agent/llm";
 import { DEMO_DATASET_ID, getDataset, getDemoDataset } from "@/lib/data/store";
-import type { AnalysisStep } from "@/lib/agent/state";
+import type { AgentDecision, AnalysisStep } from "@/lib/agent/state";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -48,12 +48,18 @@ export async function POST(req: Request) {
             if (!update) continue;
             finalState = { ...finalState, ...update };
             const steps = (update.analysisLog as AnalysisStep[] | undefined) ?? [];
+            const decisions = (update.agentDecisions as AgentDecision[] | undefined) ?? [];
             send({
               type: "node",
               node,
               stage: update.currentStage,
               steps,
+              decisions,
               patch: {
+                capabilityReport: update.capabilityReport,
+                dataQualityIssues: update.dataQualityIssues,
+                signals: update.signals,
+                affectedScope: update.affectedScope,
                 targetMetric: update.targetMetric,
                 targetDate: update.targetDate,
                 currentLayer: update.currentLayer,

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { DEMO_DATASET_ID, datasetFromUpload, getDemoDataset, putDataset } from "@/lib/data/store";
+import { providerInfo } from "@/lib/agent/llm";
+import { assessCapability } from "@/lib/tools/capability";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -11,6 +13,8 @@ export async function GET() {
     datasetId: DEMO_DATASET_ID,
     metadata: ds.metadata,
     events: ds.events,
+    capability: assessCapability(ds.metadata, undefined, ds.events.length),
+    llm: providerInfo(),
     isDemo: true,
   });
 }
@@ -29,7 +33,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "没有解析到有效数据行，请检查日期列与表头", metadata: ds.metadata }, { status: 422 });
     }
     const datasetId = putDataset(ds);
-    return NextResponse.json({ datasetId, metadata: ds.metadata, events: ds.events, isDemo: false });
+    return NextResponse.json({
+      datasetId,
+      metadata: ds.metadata,
+      events: ds.events,
+      capability: assessCapability(ds.metadata, undefined, ds.events.length),
+      llm: providerInfo(),
+      isDemo: false,
+    });
   } catch (err) {
     console.error("[api/dataset] 解析失败", err);
     return NextResponse.json({ error: "文件解析失败：" + (err as Error).message }, { status: 500 });

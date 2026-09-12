@@ -12,7 +12,15 @@ export const CONFIDENCE_LABEL: Record<ConfidenceLevel, string> = {
 };
 
 export interface EvidenceItem {
-  kind: "事件时间吻合" | "影响范围一致" | "对照验证" | "机制关系" | "指标同步变化" | "缺少对照";
+  kind:
+    | "事件匹配"
+    | "无兼容事件"
+    | "事件时间吻合"
+    | "影响范围一致"
+    | "对照验证"
+    | "机制关系"
+    | "指标同步变化"
+    | "缺少对照";
   detail: string;
   strength: "强" | "中" | "弱";
   relatedCauseId?: string;
@@ -27,6 +35,12 @@ export interface ConfidenceAssessment {
   missing: string[];
   /** 该因果链路是否属于产品假设关系：未经实验最高只能到候选 */
   hypothesisCapped: boolean;
+  /** 证据分（0~100），由四项确定性判定加总，用于卡片展示与排序 */
+  score: number;
+  scoreBreakdown: { label: string; got: number; max: number; hit: boolean }[];
+  /** 建议的下一步验证方式与对接方，来自原因库 */
+  recommendedValidation: string;
+  partner: string;
 }
 
 /** 判断候选原因涉及的关系类型是否为产品假设（项目三诊断树 X 系列）。 */
@@ -69,25 +83,42 @@ export function calculateConfidence(
   } else {
     missing.push("尚未执行对照验证");
   }
+  // 只采纳与该原因相关（或通用）的证据，避免把别的原因的事件写成本原因的支撑
   for (const e of evidence) {
-    if (e.strength === "强") reasons.push(e.detail);
+    if (e.strength !== "强") continue;
+    if (e.relatedCauseId && e.relatedCauseId !== cause.causeId) continue;
+    reasons.push(e.detail);
   }
 
+  const mechanism = evidence.some((e) => e.kind === "机制关系") || cause.matchBreakdown.business >= 1;
   let level: ConfidenceLevel = "candidate";
   if (isExperimentEvidence && scopeMatch) level = "confirmed";
-  else if (timeMatch && scopeMatch && (hasControl || evidence.some((e) => e.kind === "机制关系"))) level = "highly_related";
+  else if (timeMatch && scopeMatch && (hasControl || mechanism)) level = "highly_related";
   if (hypothesisCapped && level !== "confirmed") {
     level = "candidate";
     missing.push("互动 → 搜索属于产品假设关系，未经实验验证最高只能是候选");
   }
+  const scoreBreakdown = [
+    { label: "业务类型兼容的事件", got: timeMatch ? 40 : 0, max: 40, hit: timeMatch },
+    { label: "影响范围一致", got: scopeMatch ? 25 : 0, max: 25, hit: scopeMatch },
+    { label: "对照验证", got: hasControl ? 25 : 0, max: 25, hit: hasControl },
+    { label: "机制关系可解释", got: mechanism ? 10 : 0, max: 10, hit: mechanism },
+  ];
+  const score = scoreBreakdown.reduce((n, x) => n + x.got, 0);
+
   return {
     causeId: cause.causeId,
     causeName: cause.name,
     level,
     levelLabel: CONFIDENCE_LABEL[level],
-    reasons,
-    missing,
+    // 验证循环会多轮累积证据，这里按内容去重
+    reasons: [...new Set(reasons)],
+    missing: [...new Set(missing)],
     hypothesisCapped,
+    score,
+    scoreBreakdown,
+    recommendedValidation: cause.verifyMethod,
+    partner: cause.partner,
   };
 }
 
